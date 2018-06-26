@@ -320,7 +320,7 @@ echo " " >> $CREATE_FILE 2>&1
 #cat /etc/services | grep "finger" | wc -l > vultemp
 # 포트 확인 가능
 
-cat /etc/inetd.conf | awk '{print $q}' | grep "finger" | grep -v "#" | wc -l = vultemp
+cat /etc/inetd.conf | awk '{print $1}' | grep "finger" | grep -v "#" | wc -l > vultemp
 vulresult=$(cat vultemp)
 
 ls -al /usr/bin/finger | wc -l > fingertemp
@@ -479,6 +479,7 @@ rm -f fingertemp
 
 # echo "test ======== aa"> test.html
 # sed 's/========/********/' test.html
-
+#test=$(sed 's/========/*****/' $CREATE_FILE)
+#test > test.txt
 
 #cat ./$CREATE_FILE

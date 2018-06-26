@@ -7,7 +7,7 @@ os.system('./linux.sh')
 html_header = '''<html>
 <body>
 <br>
-<h1> RESULT TITLE </h1>
+<h1> Vulnerability Result </h1>
 <table border=1>
 <tr>
     <td> test1 </td>
@@ -26,6 +26,7 @@ lines = linux_result.readlines()
 title = open("title",'w')
 check = open("check",'w')
 
+
 for line in lines:
     if "========" in line:
         line = line.replace("========","")
@@ -35,3 +36,44 @@ for line in lines:
     if "Check" in line:
         line = line.replace("Check Result : ","")
         check.write(line)
+
+title.close()
+check.close()
+
+d_title = title.readlines()
+d_check = check.readlines()
+
+report = open("report.html",'w')
+report.write(html_header)
+
+
+
+#list(range(22))
+
+for i in range(22):
+    report.write("<tr>")
+    report.write("<td>"+i+"<td>")
+    report.write("</tr>")
+
+
+
+report.write(html_fotter)
+report.close()
+
+        #for rline in lines:
+        #    if "Check" in rline:
+        #        rline=rline.replace("Check Result : ","")
+        #        check.write(rline)
+
+
+        #for line in lines:
+        #	if "========" in line:
+        #		line = line.replace("========","")
+        #        title.write(line)
+        #        result.write("<tr>")
+        #        result.write("<td>"+title[0]+"<td>")
+        #        result.write("</tr>")
+
+        #result.write(html_fotter)
+        #f.close()
+        #resul.close()

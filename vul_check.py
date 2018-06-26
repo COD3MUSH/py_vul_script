@@ -10,8 +10,8 @@ html_header = '''<html>
 <h1> Vulnerability Result </h1>
 <table border=1>
 <tr>
-    <td> test1 </td>
-    <td> test2 </td>
+    <td> Index </td>
+    <td> Check Result </td>
 </tr>
 '''
 
@@ -39,6 +39,8 @@ for line in lines:
 
 title.close()
 check.close()
+title = open("title",'r')
+check = open("check",'r')
 
 d_title = title.readlines()
 d_check = check.readlines()
@@ -52,7 +54,8 @@ report.write(html_header)
 
 for i in range(22):
     report.write("<tr>")
-    report.write("<td>"+i+"<td>")
+    report.write("<td>"+d_title[i]+"</td>")
+    report.write("<td>"+d_check[i]+"</td>")
     report.write("</tr>")
 
 

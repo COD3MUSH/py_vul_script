@@ -482,4 +482,4 @@ rm -f fingertemp
 #test=$(sed 's/========/*****/' $CREATE_FILE)
 #test > test.txt
 
-#cat ./$CREATE_FILE
+cat ./$CREATE_FILE

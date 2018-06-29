@@ -1,0 +1,10 @@
+사용법
+
+1. WinSCP 등 서버에 파일을 전송시킬수있는 프로그램을 통해 해당 서버에 파일을 옮겨넣는다.
+2. 옮기려는 파일에 chmod 777의 권한을 줘야한다. (옮겨지지않을경우에만)
+3. 파일을 옮겼으면 vul_linux/lib 파일에 들어가 chmod 755 linux.sh 로 설정을해준다.
+4. vul_linux로 나와 python vul_final.py 명령을 실행해준다.
+5. report.html과 result.txt 파일이 나올것이다.
+
+report.html : 결과만 한눈에 볼수 있도록 항목 / 결과 만을 html을 통해 출력
+result.txt : cat result.txt를 통해 shell 에서 직접 항목과 결과 / 서버의 안전/취약 정보를 출력

@@ -3,7 +3,7 @@
 cat /etc/issue > osversion
 CREATE_FILE="result".txt #결과 리포트
 echo > $CREATE_FILE 2>&1
-echo "========1-1 Default 계정 삭제========" >> $CREATE_FILE 2>&1 #2>&1은 오류 출력
+echo "======== 1-1 Default 계정 삭제========" >> $CREATE_FILE 2>&1 #2>&1은 오류 출력
 echo " " >> $CREATE_FILE 2>&1
 cat /etc/passwd | egrep "lp:|uucp:|nuucp:" | wc -l > vultemp
 vulresult=$(cat vultemp)
@@ -18,7 +18,7 @@ fi
 # 01.시스템에서 이용하지 않는 Default 계정 및 의심스러운 계정의 존재유무를 검사하여 삭제함.
 # 패스워드 추측공격에 악용될 수 있음 (중)
 echo " " >> $CREATE_FILE 2>&1
-echo "========1-2 root 이외의 UID가 ‘0’ 금지========" >> $CREATE_FILE 2>&1
+echo "======== 1-2 root 이외의 UID가 ‘0’ 금지========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 awk -F: '$3==0' /etc/passwd | wc -l > vultemp
 vulresult=$(cat vultemp)
@@ -34,7 +34,7 @@ fi
 # 사용자 간 UID 중복시 사용자 감사 추적이 어렵고, 사용자 권한이 중복됨.
 # 일반계정의 UID가 '0'이면 삭제 또는 적절한 UID 부여(100이상의 번호) (상)
 echo " " >> $CREATE_FILE 2>&1
-echo "========1-3 패스워드 사용규칙 적용========" >> $CREATE_FILE 2>&1
+echo "======== 1-3 패스워드 사용규칙 적용========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 # 패스워드 최소길이
 cat /etc/login.defs | grep -i "PASS_MIN_LEN" | grep -v "#" | awk '{print $2}' > vultemp
@@ -86,7 +86,7 @@ fi
 # etc/login.defs파일에 PASS_MIN_LEN 5 를 추가해준상태
 # 5. 패스워드 추측공격을 피하기위하여 최소길이가 설정되어있어야함
 echo " " >> $CREATE_FILE 2>&1
-echo "========1-4 root 계정 원격 접속 제한========" >> $CREATE_FILE 2>&1
+echo "======== 1-4 root 계정 원격 접속 제한========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 # pts가 존재하면 원격이 가능하므로 취약
 cat /etc/securetty | grep ^pts | wc -l > vultemp
@@ -102,7 +102,7 @@ fi
 # 4.root는 시스템을 관리하는 중요한계정이므로,
 # 원격 접속허용은 공격자에게 좋은 기회를 제공할 수 있으므로 원격 접속은 금지해야함
 echo " " >> $CREATE_FILE 2>&1
-echo "========1-5 계정 잠금 임계값 설정========" >> $CREATE_FILE 2>&1
+echo "======== 1-5 계정 잠금 임계값 설정========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 cat /etc/pam.d/common-auth | grep -i "required" | awk '{print $4}' | grep "deny=5" | wc -l > vultemp
 vulresult=$(cat vultemp)
@@ -115,7 +115,7 @@ else
   cat /etc/pam.d/common-auth | grep -i "required" >> $CREATE_FILE 2>&1
 fi
 echo " " >> $CREATE_FILE 2>&1
-echo "========2-1 Root 홈, 패스 디렉터리 권한 및 패스 설정========" >> $CREATE_FILE 2>&1
+echo "======== 2-1 Root 홈, 패스 디렉터리 권한 및 패스 설정========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 echo $PATH > path
 cat path | grep "::" | wc -l > vultemp
@@ -129,7 +129,7 @@ else
   cat path >> $CREATE_FILE 2>&1
 fi
 echo " " >> $CREATE_FILE 2>&1
-echo "========2-2 passwd 파일 접근권한========" >> $CREATE_FILE 2>&1
+echo "======== 2-2 passwd 파일 접근권한========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 ls -alL /etc/passwd | awk '{print $1}' | grep ".rw-r--r--" | wc -l > vultemp
 vulresult=$(cat vultemp)
@@ -147,7 +147,7 @@ fi
 # 파일의 설정상의 문제점이나 파일 permission 등을 진단하여
 # 관리자의 관리상 실수나 오류로 발생할 수 있는 침해사고의 위험성을 진단
 echo " " >> $CREATE_FILE 2>&1
-echo "========2-3 group 파일 접근권한========" >> $CREATE_FILE 2>&1
+echo "======== 2-3 group 파일 접근권한========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 ls -alL /etc/group | awk '{print $1}' | grep ".rw-r--r--" | wc -l > vultemp
 vulresult=$(cat vultemp)
@@ -165,7 +165,7 @@ fi
 # 인가되지않은 사용자가 root 그룹으로 등록되어 root 권한 획득 가능.
 # 일반사용자들의 쓰기 권한을 제한하여야함
 echo " " >> $CREATE_FILE 2>&1
-echo "========2-4 shadow 파일 접근권한========" >> $CREATE_FILE 2>&1
+echo "======== 2-4 shadow 파일 접근권한========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 ls -alL /etc/shadow | awk '{print $1}' | grep ".r--------" | wc -l > vultemp
 vulresult=$(cat vultemp)
@@ -180,7 +180,7 @@ else
   ls -alL /etc/shadow >> $CREATE_FILE 2>&1
 fi
 echo " " >> $CREATE_FILE 2>&1
-echo "========2-5 hosts 파일 접근권한========" >> $CREATE_FILE 2>&1
+echo "======== 2-5 hosts 파일 접근권한========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 ls -alL /etc/hosts | awk '{print $1}' | grep ".rw-------" | wc -l > vultemp
 vulresult=$(cat vultemp)
@@ -195,7 +195,7 @@ else
   ls -alL /etc/hosts >> $CREATE_FILE 2>&1
 fi
 echo " " >> $CREATE_FILE 2>&1
-echo "========2-6 (x)inetd.conf 파일 접근권한========" >> $CREATE_FILE 2>&1
+echo "======== 2-6 (x)inetd.conf 파일 접근권한========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 ls -alL /etc/xinetd.conf | awk '{print $1}' | grep ".r--------" | wc -l > vultemp
 vulresult=$(cat vultemp)
@@ -215,7 +215,7 @@ else
   ls -alL /etc/xinetd.conf >> $CREATE_FILE 2>&1
 fi
 echo " " >> $CREATE_FILE 2>&1
-echo "========2-7 syslog.conf 파일 접근권한========" >> $CREATE_FILE 2>&1
+echo "======== 2-7 syslog.conf 파일 접근권한========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 ls -alL /etc/rsyslog.conf | awk '{print $1}' | grep ".rw-r--r--" | wc -l > vultemp
 vulresult=$(cat vultemp)
@@ -236,7 +236,7 @@ else
   ls -alL /etc/rsyslog.conf >> $CREATE_FILE 2>&1
 fi
 echo " " >> $CREATE_FILE 2>&1
-echo "========2-8 /etc/services 파일 접근권한========" >> $CREATE_FILE 2>&1
+echo "======== 2-8 /etc/services 파일 접근권한========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 ls -alL /etc/services | awk '{print $1}' | grep ".rw-r--r--" | wc -l > vultemp
 vulresult=$(cat vultemp)
@@ -251,7 +251,7 @@ else
   ls -alL /etc/services >> $CREATE_FILE 2>&1
 fi
 echo " " >> $CREATE_FILE 2>&1
-echo "========2-9 /dev device 파일 접근권한========" >> $CREATE_FILE 2>&1
+echo "======== 2-9 /dev device 파일 접근권한========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 find /dev -type f -exec ls -l {} \; | grep "," | wc -l > vultemp
 vulresult=$(cat vultemp)
@@ -268,7 +268,7 @@ fi
 # -exec 명령 {} \; / -type f(일반타입의 파일을 지정하여 검색)
 # Ex : ( Major, minor number ) 12,0 (o)/ 978525 (x)
 echo " " >> $CREATE_FILE 2>&1
-echo "========2-10 UMASK 설정 관리========" >> $CREATE_FILE 2>&1
+echo "======== 2-10 UMASK 설정 관리========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 cat /etc/profile | awk '{print $1, $2 }' | grep "umask" | grep -v "export" | awk '{print $2}' > vultemp
 vulresult=$(cat vultemp)
@@ -282,7 +282,7 @@ else
 fi
 # 3. 서비스 관리
 echo " " >> $CREATE_FILE 2>&1
-echo "========3-1 Finger 서비스 비활성화========" >> $CREATE_FILE 2>&1
+echo "======== 3-1 Finger 서비스 비활성화========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 #cat /etc/services | grep "finger" | wc -l > vultemp
 # 포트 확인 가능
@@ -306,7 +306,7 @@ fi
 # /etc/xinetd/finger 파일의 삭제
 # /etc/services 파일내에서 finger 행의 삭제 또는 주석( # ) 처리
 echo " " >> $CREATE_FILE 2>&1
-echo "========3-2 Anonymous FTP 비활성화========" >> $CREATE_FILE 2>&1
+echo "======== 3-2 Anonymous FTP 비활성화========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 cat /etc/passwd | grep "ftp" | wc -l > vultemp
 vulresult=$(cat vultemp)
@@ -318,7 +318,7 @@ else
   cat /etc/passwd | grep "ftp" >> $CREATE_FILE 2>&1
 fi
 echo " " >> $CREATE_FILE 2>&1
-echo "========3-3 r 계열 서비스 비활성화========" >> $CREATE_FILE 2>&1
+echo "======== 3-3 r 계열 서비스 비활성화========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 cat /etc/services | awk '{print $1}' | egrep "rsh|rlogin|rexec" | wc -l > vultemp
 vulresult=$(cat vultemp)
@@ -330,7 +330,7 @@ else
   cat /etc/services | egrep "rsh|rlogin|rexec" >> $CREATE_FILE 2>&1
 fi
 echo " " >> $CREATE_FILE 2>&1
-echo "========3-4 cron 파일 소유자 및 권한설정========" >> $CREATE_FILE 2>&1
+echo "======== 3-4 cron 파일 소유자 및 권한설정========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 ls -l /etc/cron.d/cron.allow | wc -l > nofiletemp
 ls -l /etc/cron.d/cron.deny | wc -l > nofiletemp1
@@ -354,7 +354,7 @@ else
   ls -alL /etc/cron.d/cron.deny >> $CREATE_FILE 2>&1
 fi
 echo " " >> $CREATE_FILE 2>&1
-echo "========3-5 ssh 원격접속 허용========" >> $CREATE_FILE 2>&1
+echo "======== 3-5 ssh 원격접속 허용========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 ps -ax | grep sshd | grep -v "grep" | wc -l > vultemp
 vulresult=$(cat vultemp)
@@ -367,7 +367,7 @@ else
   ps -ax | grep sshd | grep -v "grep" >> $CREATE_FILE 2>&1
 fi
 echo " " >> $CREATE_FILE 2>&1
-echo "========3-6 SNMP 서비스 구동 점검========" >> $CREATE_FILE 2>&1
+echo "======== 3-6 SNMP 서비스 구동 점검========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 ps -ef | grep snmp | grep -v "grep" | awk '{print $1}' | grep "snmp" | wc -l > vultemp
 vulresult=$(cat vultemp)
@@ -380,7 +380,7 @@ else
   echo "Check Result : Safe" >> $CREATE_FILE 2>&1
 fi
 echo " " >> $CREATE_FILE 2>&1
-echo "========3-7 expn, vrfy 명령어 제한========" >> $CREATE_FILE 2>&1
+echo "======== 3-7 expn, vrfy 명령어 제한========" >> $CREATE_FILE 2>&1
 echo " " >> $CREATE_FILE 2>&1
 cat /etc/mail/sendmail.cf | grep "PrivacyOptions" | grep "novrfy" | wc -l > cmpvalue1
 resultcmpvalue1=$(cat cmpvalue1)
@@ -406,5 +406,7 @@ rm -f vultemp
 rm -f cmpvalue1
 rm -f cmpvalue2
 rm -f fingertemp
+
+cat result.txt | grep "========" | awk '{ print $2 }' > index
 
 cat ./$CREATE_FILE

@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# os version
+cat /etc/issue > osversion
+
 CREATE_FILE="result".txt #결과 리포트
 echo > $CREATE_FILE 2>&1
 echo "========1-1.Default 계정 삭제========" >> $CREATE_FILE 2>&1 #2>&1은 오류 출력

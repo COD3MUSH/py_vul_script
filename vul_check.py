@@ -46,9 +46,14 @@ d_title = title.readlines()
 d_check = check.readlines()
 
 report = open("report.html",'w')
+os_version = open("osversion",'r')
+osversion = os_version.readlines()
+
 report.write(html_header)
 
-
+for i in range(1):
+    report.write("<h3> OS Version : "+osversion[i]+"</h3>")
+    
 
 #list(range(22))
 

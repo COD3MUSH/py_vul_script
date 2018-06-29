@@ -1,0 +1,120 @@
+
+========1-1 Default 계정 삭제========
+ 
+Check Result : UnSafe
+alp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+auucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+ 
+========1-2 root 이외의 UID가 ‘0’ 금지========
+ 
+Check Result : Safe
+root => UID=0
+ 
+========1-3 패스워드 사용규칙 적용========
+ 
+Check Result : UnSafe
+PASS_MIN_LEN	5
+PASS_MIN_DAYS	1
+PASS_MAX_DAYS	60
+ 
+========1-4 root 계정 원격 접속 제한========
+ 
+Check Result : Safe
+^pts file not found
+ 
+========1-5 계정 잠금 임계값 설정========
+ 
+Check Result : Safe
+auth	required			pam_permit.so deny=5
+ 
+========2-1 Root 홈, 패스 디렉터리 권한 및 패스 설정========
+ 
+Check Result : Safe
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
+ 
+========2-2 passwd 파일 접근권한========
+ 
+Check Result : Safe
+-rw-r--r-- 1 root root 2698  6월 26 11:18 /etc/passwd
+ 
+========2-3 group 파일 접근권한========
+ 
+Check Result : Safe
+-rw-r--r-- 1 root root 1092  6월 26 11:18 /etc/group
+ 
+========2-4 shadow 파일 접근권한========
+ 
+Check Result : UnSafe
+-rw-r----- 1 root shadow 1444  6월 26 11:18 /etc/shadow
+ 
+========2-5 hosts 파일 접근권한========
+ 
+Check Result : UnSafe
+-rw-r--r-- 1 root root 238  5월 19  2016 /etc/hosts
+ 
+========2-6 (x)inetd.conf 파일 접근권한========
+ 
+Check Result : UnSafe
+-rw-r--r-- 1 root root 141  6월 26 11:20 /etc/xinetd.conf
+ 
+========2-7 syslog.conf 파일 접근권한========
+ 
+Check Result : Safe
+-rw-r--r-- 1 root root 1371  1월 28  2016 /etc/rsyslog.conf
+ 
+========2-8 /etc/services 파일 접근권한========
+ 
+Check Result : Safe
+-rw-r--r-- 1 root root 19607  6월 22 14:05 /etc/services
+ 
+========2-9 /dev device 파일 접근권한========
+ 
+Check Result : UnSafe
+-rwx------ 1 root root 67108904  6월 22 14:23 /dev/shm/pulse-shm-33138479
+-rwx------ 1 vmadmin vmadmin 67108904  6월 22 14:22 /dev/shm/pulse-shm-512532495
+-rwx------ 1 vmadmin vmadmin 67108904  6월 22 14:22 /dev/shm/pulse-shm-623881290
+-rwx------ 1 vmadmin vmadmin 67108904  6월 22 14:22 /dev/shm/pulse-shm-1860515681
+-rwx------ 1 vmadmin vmadmin 67108904  6월 22 14:22 /dev/shm/pulse-shm-3756981726
+-rwx------ 1 vmadmin vmadmin 67108904  6월 22 14:22 /dev/shm/pulse-shm-993796820
+ 
+========2-10 UMASK 설정 관리========
+ 
+Check Result : Safe
+umask 021
+ 
+========3-1 Finger 서비스 비활성화========
+ 
+Check Result : UnSafe
+finger		stream	tcp	nowait	root	/usr/sbin/tcpd	/usr/sbin/cfingerd
+ 
+========3-2 Anonymous FTP 비활성화========
+ 
+Check Result : Safe
+ 
+========3-3 r 계열 서비스 비활성화========
+ 
+Check Result : Safe
+ 
+========3-4 cron 파일 소유자 및 권한설정========
+ 
+Check Result : UnSafe
+-rw-r----- 1 root root 0  6월 18 14:38 /etc/cron.d/cron.allow
+-rw-r--r-- 1 root root 5  6월 26 11:21 /etc/cron.d/cron.deny
+ 
+========3-5 ssh 원격접속 허용========
+ 
+Check Result : Safe
+ 1067 ?        Ss     0:00 /usr/sbin/sshd -D
+10390 ?        Ss     0:00 sshd: vmadmin [priv]
+10440 ?        S      0:00 sshd: vmadmin@pts/20
+ 
+========3-6 SNMP 서비스 구동 점검========
+ 
+Check Result : UnSafe
+snmp      8277     1  0  6월25 ?      00:02:07 /usr/sbin/snmpd -Lsd -Lf /dev/null -u snmp -g snmp -I -smux mteTrigger mteTriggerConf -p /run/snmpd.pid
+snmptt    8511  8510  0  6월25 ?      00:00:05 /usr/bin/perl /usr/sbin/snmptt --daemon
+ 
+========3-7 expn, vrfy 명령어 제한========
+ 
+Check Result : Safe
+O PrivacyOptions=needmailhelo,needexpnhelo,needvrfyhelo,restrictqrun,restrictexpand,nobodyreturn,authwarnings,novrfy,noexpn

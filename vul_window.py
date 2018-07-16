@@ -8,7 +8,7 @@ html_header = '''<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <title> REPORT </title>
-    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="lib/css/bootstrap.css">
     </head>
     <body>
     <br>
@@ -29,7 +29,7 @@ html_header = '''<!DOCTYPE html>
 html_fotter = '''</tbody>
 </table>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-<script type="text/javascript" src="js/bootstrap.js"></script>
+<script type="text/javascript" src="lib/js/bootstrap.js"></script>
 </body>
 </html>'''
 
@@ -48,13 +48,30 @@ for line in lines:
     if "Check" in line:
         line = line.replace("Check Result : ","")
         check.write(line)
-
+		
 title.close()
 check.close()
+
 title = open("title_w",'r')
 check = open("check_w",'r')
 
 d_title = title.readlines()
+d_check = check.readlines()
+c_check = open("c_check_w",'w')
+
+
+for line in d_check:
+    if "UnSafe" in line:
+        line = line.replace("UnSafe", "<td style='color:red'>UnSafe")
+        c_check.write(line)
+    else:
+        line = line.replace("Safety", "<td>Safety")
+        c_check.write(line)
+
+c_check.close()
+check.close()
+
+check = open("c_check_w",'r')
 d_check = check.readlines()
 
 report = open("report_w.html",'w',encoding="utf-8")
@@ -89,10 +106,7 @@ for i in range(18):
 
     report.write("<tr>")
     report.write("<td>"+d_title[i]+"</td>")
-    if d_check[i] == 'UnSafe':
-        report.write("<td style='color:red'>" + d_check[i] + "</td>")
-    else :
-        report.write("<td>" + d_check[i] + "</td>")
+    report.write(""+ d_check[i] + "</td>")
     report.write("</tr>")
 
 
@@ -105,6 +119,7 @@ title.close()
 os_version.close()
 report.close()
 
+os.remove('c_check_w')
 os.remove('check_w')
 os.remove('title_w')
 os.remove('osversion_w')

@@ -4,12 +4,17 @@ import os
 #subprocess.call(["ls", "-l"])
 os.system('./lib/linux.sh')
 
+
+
+
+
+
 html_header = '''<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title> REPORT </title>
-    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="lib/css/bootstrap.css">
 </head>
 <body>
 <br>
@@ -31,7 +36,7 @@ html_fotter = '''</tbody>
 </table>
 </div>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-<script type="text/javascript" src="js/bootstrap.js"></script>
+<script type="text/javascript" src="lib/js/bootstrap.js"></script>
 </div>
 </body>
 </html>'''

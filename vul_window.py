@@ -77,36 +77,43 @@ d_check = check.readlines()
 report = open("report_w.html",'w',encoding="utf-8")
 os_version = open("osversion_w",'r')
 osversion = os_version.readlines()
+ip_version = open("ip",'r')
+ipversion = ip_version.readlines()
+
 
 report.write(html_header)
 
 for i in range(1):
     report.write("<h4>"+osversion[i]+"</h4>")
+	
+for i in range(1):
+    report.write("<h5> IP : "+ipversion[i]+"</h5>")
 
-for i in range(18):
+
+for i in range(28):
     if i == 0 :
         report.write("<tr><td colspan='3' align='center' bgcolor='darksalmon'>")
         report.write("1 계정 관리 </td></tr>")
 
-    if i == 5 :
+    if i == 15 :
         report.write("<tr><td colspan='3' align='center' bgcolor='aquamarine'>")
         report.write("2 서비스 관리 </td></tr>")
 
-    if i == 11 :
+    if i == 21 :
         report.write("<tr><td colspan='3' align='center' bgcolor='lightskyblue'>")
         report.write("3 패치 관리 </td></tr>")
 
-    if i == 12 :
+    if i == 22 :
         report.write("<tr><td colspan='3' align='center' bgcolor='lightgrey'>")
         report.write("4 로그 관리 </td></tr>")
 
-    if i == 15 :
+    if i == 25 :
         report.write("<tr><td colspan='3' align='center' bgcolor='#3c64bf'>")
         report.write("5 보안 관리 </td></tr>")
 
     report.write("<tr>")
     report.write("<td>"+d_title[i]+"</td>")
-    report.write(""+ d_check[i] + "</td>")
+    report.write(" "+ d_check[i] + "</td>")
     report.write("</tr>")
 
 
@@ -115,10 +122,12 @@ for i in range(18):
 
 report.write(html_fotter)
 check.close()
+ip_version.close()
 title.close()
 os_version.close()
 report.close()
 
+os.remove('ip')
 os.remove('c_check_w')
 os.remove('check_w')
 os.remove('title_w')

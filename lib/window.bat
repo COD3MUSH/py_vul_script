@@ -1,4 +1,25 @@
 @echo off
+>nul 2>&1 "%SYSTEMROOT%\system32\cacls.exe" "%SYSTEMROOT%\system32\config\system"
+if '%errorlevel%' NEQ '0' (
+echo.
+echo ==========================
+echo      관리 권한을 요청 ...
+echo ==========================
+echo.
+goto UACPrompt
+) else ( goto gotAdmin )
+:UACPrompt
+    echo Set UAC = CreateObject^("Shell.Application"^) > "%temp%\getadmin.vbs"
+    set params = %*:"=""
+    echo UAC.ShellExecute "cmd.exe", "/c %~s0 %params%", "", "runas", 1 >> "%temp%\getadmin.vbs"
+    "%temp%\getadmin.vbs"
+    rem del "%temp%\getadmin.vbs"
+exit /B
+
+:gotAdmin
+pushd "%CD%"
+    CD /D "%~dp0"
+	
 cls
 echo ##############################################
 echo      Windows 취약점 점검을 시작합니다.
@@ -333,9 +354,8 @@ echo. >> %filename%
 echo 항목중요도 : 미정 >> %filename%
 echo. >> %filename%
 
-net start 
-sc query "SNMPTRAP" | findstr RUNNING >> %filename%
-sc query "SNMPTRAP" | findstr RUNNING > nul
+sc query "SNMPTRAP" >> %filename%
+net start | find "SNMP Trap" > nul
 if not errorlevel 1 echo Check Result : UnSafe >> %filename%
 if errorlevel 1 echo Check Result : Safety >> %filename%
 
@@ -354,25 +374,53 @@ for /f "tokens=3" %%a in (%tempfile%-rem-ser) do set compare_val=%%a
 if %compare_val% EQU 0 echo Check Result : Safety >> %filename%
 if %compare_val% GEQ 1 echo Check Result : UnSafe >> %filename%
 
-if not errorlevel 1 echo Check Result : UnSafe >> %filename%
-if errorlevel 1 echo Check Result : Safety >> %filename%
-
+del %tempfile%-ser
+del %tempfile%-rem-ser
 echo ======== 2-8 IIS 서비스 구동 점검 ======== >> %filename%
 echo. >> %filename%
 echo 항목중요도 : 상 >> %filename%
 echo. >> %filename%
 echo IIS를 사용하는데 실행이 되어있는 경우는 별개 (관리자판단) >> %filename%
-echo 현재 툴은 IIS를 사용하지 않는 다는것을 안전으로 취급
+echo 현재 툴은 IIS를 사용하지 않는 다는것을 안전으로 취급 >> %filename%
 
-net start | find "IISADMIN" >> %filename%
-net start | find "IISADMIN"
+sc query IISADMIN >> %filename%
+net start | find "IIS Admin Service" > nul
 if not errorlevel 1 echo Check Result : UnSafe >> %filename%
 if errorlevel 1 echo Check Result : Safety >> %filename%
 
+echo ======== 2-9 FTP 서비스 구동 점검 ======== >> %filename%
+echo. >> %filename%
+echo 항목중요도 : 상 >> %filename%
+echo. >> %filename%
 
+sc query FTPSVC >> %filename%
+net start | find "Microsoft FTP Service" > nul
 
+if not errorlevel 1 echo Check Result : UnSafe >> %filename%
+if errorlevel 1 echo Check Result : Safety >> %filename%
 
+echo ======== 2-10 터미널 서비스 암호화 수준 설정 ======== >> %filename%
+echo. >> %filename%
+echo 항목중요도 : 중 >> %filename%
+echo. >> %filename%
 
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp"  | find "MinEncryptionLevel" > %tempfile%-ter
+
+for /f "tokens=3" %%a in (%tempfile%-ter) do set compare_val=%%a
+if %compare_val% GEQ 2 echo Check Result : Safety >> %filename%
+if %compare_val% LSS 2  echo Check Result : UnSafe >> %filename%
+del %tempfile%-ter
+:: 2(중간)이상 안전
+
+echo ======== 2-11 Telnet 보안 설정 ======== >> %filename%
+echo. >> %filename%
+echo 항목중요도 : 중 >> %filename%
+echo. >> %filename%
+
+sc query "TlntSvr" >> %filename%
+net start | find "Telnet" > nul
+if not errorlevel 1 echo Check Result : UnSafe >> %filename%
+if errorlevel 1 echo Check Result : Safety >> %filename%
 
 echo ======== 3-1 백신 프로그램 업데이트 (V3) ======== >> %filename%
 :: 레지스트리 값으로 비교
@@ -384,6 +432,53 @@ if not "%compare_val%" EQU "9.0.48.1245" echo Check Result : UnSafe >> %filename
 if "%compare_val%" EQU "9.0.48.1245" echo Check Result : Safety >> %filename%
 
 del %tempfile%-update
+
+echo ======== 3-2 정책에 따른 시스템 로깅 설정 ======== >> %filename%
+echo. >> %filename%
+echo 항목중요도 : 중 >> %filename%
+echo. >> %filename%
+
+find "AuditLogonEvents" C:\secpol.inf >> %filename%
+find "AuditPrivilegeUse" C:\secpol.inf >> %filename%
+find "AuditPolicyChange" C:\secpol.inf >> %filename%
+find "AuditAccountManage" C:\secpol.inf >> %filename%
+find "AuditDSAccess" C:\secpol.inf >> %filename%
+find "AuditAccountLogon" C:\secpol.inf >> %filename%
+
+find "AuditLogonEvents" C:\secpol.inf | find "3" > nul
+if not errorlevel 1 goto sec1-safe
+if errorlevel 1 goto sec-fail
+
+:sec1-safe
+find "AuditPrivilegeUse" C:\secpol.inf | find "3" > nul
+if not errorlevel 1 goto sec2-safe
+if errorlevel 1 goto sec-fail
+
+:sec2-safe
+find "AuditPolicyChange" C:\secpol.inf | find "3" > nul
+if not errorlevel 1 goto sec3-safe
+if errorlevel 1 goto sec-fail
+
+:sec3-safe
+find "AuditAccountManage" C:\secpol.inf | find "2" > nul
+if not errorlevel 1 goto sec4-safe
+if errorlevel 1 goto sec-fail
+
+:sec4-safe
+find "AuditDSAccess" C:\secpol.inf | find "2" > nul
+if not errorlevel 1 goto sec5-safe
+if errorlevel 1 goto sec-fail
+
+:sec5-safe
+find "AuditAccountLogon" C:\secpol.inf | find "3" > nul
+if not errorlevel 1 echo Check Result : Safety >> %filename%
+if errorlevel 1 goto sec-fail
+goto main
+
+:sec-fail
+echo Check Result : UnSafe >> %filename%
+
+:main
 
 echo ======== 4-1 원격으로 엑세스할 수 있는 레지스트리 경로 ======== >> %filename%
 echo. >> %filename%
@@ -428,7 +523,8 @@ if not errorlevel 1 echo Check Result : UnSafe >> %filename%
 if errorlevel 1 echo Check Result : Safety >> %filename%
 
 echo ======== 5-1 백신 프로그램 설치 (V3) ======== >> %filename%
-
+echo 항목중요도 : 상 >> %filename%
+echo. >> %filename%
 tasklist /FI "IMAGENAME eq V3UI.exe" | find /v "========" >> %filename%
 tasklist /FI "IMAGENAME eq V3UI.exe"
 if not errorlevel 1 echo Check Result : Safety >> %filename%
@@ -436,7 +532,8 @@ if errorlevel 1 echo Check Result : UnSafe >> %filename%
 
 echo ======== 5-2 SAM 파일 접근 통제 설정 ======== >> %filename%
 echo. >> %filename%
-
+echo 항목중요도 : 상 >> %filename%
+echo. >> %filename%
 cacls %systemroot%\system32\config\SAM | find /I /V "administrators" | find /I /V "system:" > %tempfile%-sam
 type %tempfile%-sam | find ":(ID)F" > nul
 if errorlevel 1 echo Check Result : Safety >> %filename%
@@ -446,7 +543,8 @@ del %tempfile%-sam
 
 echo ======== 5-3 화면 보호기 설정 ======== >> %filename%
 echo. >> %filename%
-
+echo 항목중요도 : 상 >> %filename%
+echo. >> %filename%
 echo. > %tempfile%-screen
 %tools%\reg query "HKEY_CURRENT_USER\Control Panel\Desktop\ScreenSaveActive" >> %tempfile%-screen
 %tools%\reg query "HKEY_CURRENT_USER\Control Panel\Desktop\ScreenSaverIsSecure" >> %tempfile%-screen
@@ -472,6 +570,207 @@ goto 5-3End
 :5-3End
 del %tempfile%-screen
 del %tempfile%
+
+echo ======== 5-4 로그온 하지 않고 시스템 종료 허용 ======== >> %filename%
+echo. >> %filename%
+echo 항목중요도 : 상 >> %filename%
+echo. >> %filename%
+
+reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" | find "shutdownwithoutlogon" >> %filename%
+reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" | find "shutdownwithoutlogon" | find "1" > nul
+if not errorlevel 1 echo Check Result : UnSafe >> %filename%
+if errorlevel 1 echo Check Result : Safety >> %filename%
+
+::Window NT => HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon
+::ShutdownWithoutLogon
+
+echo ======== 5-5 보안 감사를 로그할 수 없는 경우 즉시 시스템 종료 ======== >> %filename%
+echo. >> %filename%
+echo 항목중요도 : 상 >> %filename%
+echo. >> %filename%
+
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa" | find "crashonauditfail" >> %filename%
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa" | find "crashonauditfail" | find "1" > nul
+if not errorlevel 1 echo Check Result : UnSafe >> %filename%
+if errorlevel 1 echo Check Result : Safety >> %filename%
+
+echo ======== 5-6 SAM 계정과 공유의 익명 열거 허용 안 함 ======== >> %filename%
+echo. >> %filename%
+echo 항목중요도 : 상 >> %filename%
+echo. >> %filename%
+
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa" | find "restrictanonymous" | find /v "restrictanonymoussam" >> %filename%
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa" | find /v "restrictanonymoussam" | find "restrictanonymous" | find "1" > nul
+if not errorlevel 1 echo Check Result : UnSafe >> %filename%
+if errorlevel 1 echo Check Result : Safety >> %filename%
+
+
+echo ======== 5-7 Autologon 기능 제어 ======== >> %filename%
+echo. >> %filename%
+echo 항목중요도 : 상 >> %filename%
+echo. >> %filename%
+echo 취약점 개요 : *Autologon 기능을 사용하면 침입자가 해킹 도구를 이용하여 레지스트리에서 로그인 >> %filename%
+echo 계정 및 암호를 확인할 수 있으므로 기능을 사용하지 않도록 설정함 >> %filename%
+echo. >> %filename%
+echo 양호 : AutoAdminLogon 값이 없거나 0으로 설정되어 있는 경우 >> %filename%
+echo 취약 : AutoAdminLogon 값이 1로 설정되어 있는 경우 >> %filename%
+
+reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" | find "AutoAdminLogon" >> %filename%
+reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" | find "AutoAdminLogon" > %tempfile%-autologon
+for /f "tokens=3" %%a in (%tempfile%-autologon) do set compareval=%%a
+if "%compareval%" GEQ "1" echo Check Result : UnSafe >> %filename%
+if "%compareval%" == "0" echo Check Result : Safety >> %filename% 
+if "%compareval%" == "" echo Check Result : Safety >> %filename% 
+del %tempfile%-autologon
+
+echo ======== 5-8 이동식 미디어 포맷 및 꺼내기 허용 ======== >> %filename%
+echo. >> %filename%
+echo 항목중요도 : 상 >> %filename%
+echo. >> %filename%
+echo 취약점 개요 : 이동식 미디어의 포맷 및 꺼내기가 허용되는 사용자를 제한함으로써 >> %filename%
+echo 사용자가 NTFS관리 권한을 갖고 있는 임의의 컴퓨터로만 이동식 디스크의 데이터를 이동하고 >> %filename%
+echo 파일에 대한 소유권을 얻어 파일을 보거나 수정할 수 있도록 함. >> %filename%
+echo 계정 및 암호를 확인할 수 있으므로 기능을 사용하지 않도록 설정함 >> %filename%
+echo. >> %filename%
+echo 양호 : 이동식 미디어 포맷 및 꺼내기 허용 정책이 "Administrator" 로 되어 있는 경우 >> %filename%
+echo 취약 : 허용 정책이 "Administrator"로 되어 있지 않은 경우 >> %filename%
+
+reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" | find "AllocateDASD" >> %filename%
+reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" | find "AllocateDASD" > %tempfile%-ntfs
+for /f "tokens=3" %%a in (%tempfile%-ntfs) do set compareval=%%a
+if "%compareval%" GEQ "1" echo Check Result : UnSafe >> %filename%
+if "%compareval%" == "" echo Check Result : UnSafe >> %filename%
+if "%compareval%" == "0" echo Check Result : Safety >> %filename% 
+del %tempfile%-ntfs
+
+echo ======== 5-9 사용자가 프린터 드라이버를 설치할 수 없게 함 ======== >> %filename%
+echo. >> %filename%
+echo 항목중요도 : 중 >> %filename%
+echo. >> %filename%
+echo 취약점 개요 : 서버에 프린터 드라이버를 설치하는 경우 악의적인 사용자가 고의적으로 >> %filename%
+echo 잘못된 프린터 드라이버를 설치하여 컴퓨터를 손상시킬 수 있으며 프린터 드라이버로 >> %filename%
+echo 위장한악성 코드를 설치할 수 있으므로 사용자가 프린터 드라이버를 설치할 수 없게 설정하여야 함. >> %filename%
+echo. >> %filename%
+echo 양호 : 사용자가 프린터 드라이버를 설치할 수 없게 함 정책이 "사용" 인 경우  >> %filename%
+echo 취약 : 정책이 "사용 안 함" 인 경우 >> %filename%
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Providers\LanMan Print Services\Servers" | find "AddPrinterDrivers" >> %filename%
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Providers\LanMan Print Services\Servers" | find "AddPrinterDrivers" | find "1" > nul
+if not errorlevel 1 echo Check Result : Safety >> %filename%
+if errorlevel 1 echo Check Result : UnSafe >> %filename%
+
+echo ======== 5-10 세션 연결을 중단하기 전에 필요한 유휴시간 ======== >> %filename%
+echo. >> %filename%
+echo 항목중요도 : 중 >> %filename%
+echo. >> %filename%
+echo 취약점 개요 : 세션이 중단되기 전에 SMB(서버메세지블록) 세션에서 보내야하는 연속 유휴시간을 결정할수 있음 >> %filename%
+echo 공격자는 이를 악용하여 SMB 세션을 반복 설정하여 서버의 SMB 서비스가 느려지거나 응답하지않게하여 DOS 공격을 실행 가능 >> %filename%
+echo *SMB( ): LAN 서버 메시지 블록 이나 컴퓨터 간의 통신에서 데이터 송수신을 하기 위한 프로토콜 >> %filename%
+echo. >> %filename%
+echo 양호 : "로그온 시간이 만료되면 클라이언트 연결 끊기" 정책을 "사용"  >> %filename%
+echo "세션 연결을 중단하기 전에 필요한 유휴 시간" 정책을 "15분" 으로 설정한 경우  >> %filename%
+echo 취약 : 정책이 "사용 안 함"이고, "15분"이 아닌 경우 >> %filename%
+
+
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\LanmanServer\Parameters" | find "enableforcedlogoff" >> %filename%
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\LanmanServer\Parameters" | find "autodisconnect" >> %filename%
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\LanmanServer\Parameters" | find "enableforcedlogoff" > %tempfile%-enforce
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\LanmanServer\Parameters" | find "autodisconnect" > %tempfile%-autodcon
+for /f "tokens=3" %%a in (%tempfile%-enforce) do set compare-enforce=%%a
+for /f "tokens=3" %%a in (%tempfile%-autodcon) do set compare-autodcon=%%a
+if "%compare-enforce%" == "0x1" (
+if "%compare-autodcon%" == "0xf" (
+echo Check Result : Safety >> %filename%) else ( 
+echo Check Result : UnSafe >> %filename%) ) else (
+echo Check Result : UnSafe >> %filename% )
+del %tempfile%-enforce
+del %tempfile%-autodcon
+
+echo ======== 5-11 경고 메시지 설정 ======== >> %filename%
+echo. >> %filename%
+echo 항목중요도 : 하 >> %filename%
+echo. >> %filename%
+echo 취약점 개요 : 시스템에 로그온을 시도하는 사용자들에게 관리자는 시스템의 불법적인 사용에 대하여 경고 창을 띄움으로써 경각심을 줄 수 있음 >> %filename%
+echo 악의적인 사용자에게 관리자가 적절한 보안수준으로 시스템을 보호하고있으며, 공격자의 활동을 주시하고 있다는 >> %filename%
+echo 생각을 상기시킴으로써 간접적으로 공격 피해를 감소시키는 효과를 볼 수 있음 >> %filename%
+echo. >> %filename%
+echo 양호 : 로그인 경고 메시지제목 및 내용이 설정되어 있는 경우  >> %filename%
+echo 취약 : 설정이 되어있지 않은 경우 >> %filename%
+
+
+reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" | find "LegalNoticeCaption" > %tempfile%-warning-ti
+reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" | find "LegalNoticeText" > %tempfile%-warning-te
+for /f "tokens=3" %%a in (%tempfile%-warning-ti) do set compare_warn_ti=%%a
+for /f "tokens=3" %%a in (%tempfile%-warning-te) do set compare_warn_te=%%a
+echo. >> %filename%
+echo 경고 메시지 제목 : %compare_warn_ti% >> %filename%
+echo 경고 메시지 내용 : %compare_warn_te% >> %filename%
+
+if "%compare_warn_ti%" == "" (
+echo Check Result : UnSafe >> %filename% ) else (
+if "%compare_warn_te%" == "" (
+echo Check Result : UnSafe >> %filename% ) else (
+echo Check Result : Safety >> %filename% ))
+
+echo ======== 5-12 LAN Manager 인증 수준 ======== >> %filename%
+echo. >> %filename%
+echo 항목중요도 : 중 >> %filename%
+echo. >> %filename%
+echo 취약점 개요 : *Lan Manager 인증 수준 설정을 통해 네트워크 로그온에 사용할 >> %filename%
+echo Challenge/Response 인증 프로토콜을 결정하며 이 설정은 클라이언트가 사용하는 >> %filename%
+echo 인증 프로토콜 수준, 협상된 세션 보안 수준 및 서버가 사용하는 인증 수준에 >> %filename%
+echo 영향을 주기 때문에 보다안전한 인증을 위해 를 사용하는 것을 권장함 >> %filename%
+
+echo. >> %filename%
+echo 양호 : "LAN Manager " 인증 수준 정책에 "NTLMv2 응답만 보냄" 이 설정되어 있는 경우  >> %filename%
+echo 취약 : "LAN Manager " 인증 수준 정책에 "LM" 및 "NTLM"인증이 설정되어 있는 경우 >> %filename%
+
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa" | find "LmCompatibilityLevel" >> %filename%
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa" | find "LmCompatibilityLevel" > nul
+if errorlevel 1 echo Check Result : UnSafe >> %filename%
+if not errorlevel 1 goto LANLevel
+goto 5-12end
+
+:LANLevel
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa" | find "LmCompatibilityLevel" > %tempfile%-lanlevel
+for /f "tokens=3" %%a in (%tempfile%-lanlevel) do set compare_lan=%%a
+if "%compare_lan%" == "0x3" (
+echo Check Result : Safety >> %filename% ) else (
+echo Check Result : UnSafe >> %filename% )
+
+:5-12end
+del %tempfile%-lanlevel
+
+echo ======== 5-13 보안 채널 데이터 디지털 암호화 또는, 서명 ======== >> %filename%
+echo. >> %filename%
+echo 항목중요도 : 중 >> %filename%
+echo. >> %filename%
+echo 취약점 개요 : 보안 채널 데이터 디지털 암호화 또는, 서명 설정을 통해 도메인 구성원이 시작한 >> %filename%
+echo 모든 보안 챈러 트래픽이 최소 보안 요구 사항을 충족해야하는지를 설정 >> %filename%
+echo 인증 트래픽 끼어들기 공격 반복 공격 및 기타 유형의 네트워크 공격으로부터 보호하기 위해  >> %filename%
+echo Windows 기반에서는 NetLogon을 통해 보안 채널이라는 통신 채널을 만들어 컴퓨터 및 사용자 계정에 대한 인증을 함. >> %filename%
+
+echo. >> %filename%
+echo 양호 : 아래 3가지 정책이 "사용"으로 되어 있는 경우  >> %filename%
+echo 취약 : 아래 3가지 정책이 "사용 안 함"으로 되어 있는 경우 >> %filename%
+echo * 도메인 구성원 : 보안채널데이터를 디지털 암호화 또는 서명(항상) >> %filename%
+echo * 도메인 구성원 : 보안채널데이터를 디지털 암호화(가능한 경우) >> %filename%
+echo * 도메인 구성원 : 보안채널데이터를 디지털 서명(가능한 경우) >> %filename%
+
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Netlogon\Parameters" | find "RequireSignOrSeal" >> %filename%
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Netlogon\Parameters" | find "SealSecureChannel" >> %filename%
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Netlogon\Parameters" | find "SignSecureChannel" >> %filename%
+
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Netlogon\Parameters" | find "RequireSignOrSeal" > %tempfile%-rsos
+for /f "tokens=3" %%a in (%tempfile%-rsos) do set compare-rsos=%%a
+
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Netlogon\Parameters" | find "SealSecureChannel" > %tempfile%-ssc1
+for /f "tokens=3" %%a in (%tempfile%-ssc1) do set compare-rsos=%%a
+
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Netlogon\Parameters" | find "SignSecureChannel" > %tempfile%-ssc2
+for /f "tokens=3" %%a in (%tempfile%-ssc2) do set compare-rsos=%%a
+
+
+
 
 
 :: #2018-7-4 Script the End 

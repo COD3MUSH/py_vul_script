@@ -90,26 +90,26 @@ for i in range(1):
     report.write("<h5> IP : "+ipversion[i]+"</h5>")
 
 
-for i in range(28):
+for i in range(46):
     if i == 0 :
         report.write("<tr><td colspan='3' align='center' bgcolor='darksalmon'>")
-        report.write("1 계정 관리 </td></tr>")
+        report.write("<strong>1 계정 관리 </strong></td></tr>")
 
     if i == 15 :
         report.write("<tr><td colspan='3' align='center' bgcolor='aquamarine'>")
-        report.write("2 서비스 관리 </td></tr>")
+        report.write("<strong>2 서비스 관리 </strong></td></tr>")
 
-    if i == 21 :
+    if i == 26 :
         report.write("<tr><td colspan='3' align='center' bgcolor='lightskyblue'>")
-        report.write("3 패치 관리 </td></tr>")
+        report.write("<strong>3 패치 관리 </strong></td></tr>")
 
-    if i == 22 :
+    if i == 28 :
         report.write("<tr><td colspan='3' align='center' bgcolor='lightgrey'>")
-        report.write("4 로그 관리 </td></tr>")
+        report.write("<strong>4 로그 관리 </strong> </td></tr>")
 
-    if i == 25 :
+    if i == 31 :
         report.write("<tr><td colspan='3' align='center' bgcolor='#3c64bf'>")
-        report.write("5 보안 관리 </td></tr>")
+        report.write("<strong>5 보안 관리 </strong></td></tr>")
 
     report.write("<tr>")
     report.write("<td>"+d_title[i]+"</td>")

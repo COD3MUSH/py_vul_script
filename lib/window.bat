@@ -1,25 +1,4 @@
 @echo off
->nul 2>&1 "%SYSTEMROOT%\system32\cacls.exe" "%SYSTEMROOT%\system32\config\system"
-if '%errorlevel%' NEQ '0' (
-echo.
-echo ==========================
-echo      관리 권한을 요청 ...
-echo ==========================
-echo.
-goto UACPrompt
-) else ( goto gotAdmin )
-:UACPrompt
-    echo Set UAC = CreateObject^("Shell.Application"^) > "%temp%\getadmin.vbs"
-    set params = %*:"=""
-    echo UAC.ShellExecute "cmd.exe", "/c %~s0 %params%", "", "runas", 1 >> "%temp%\getadmin.vbs"
-    "%temp%\getadmin.vbs"
-    rem del "%temp%\getadmin.vbs"
-exit /B
-
-:gotAdmin
-pushd "%CD%"
-    CD /D "%~dp0"
-	
 cls
 echo ##############################################
 echo      Windows 취약점 점검을 시작합니다.
@@ -32,8 +11,7 @@ set filename=result_w.txt
 set tempfile=temp
 set CURPATH=%CD%
 set tempfile1=temp1
-set tools=%CURPATH%\tools
-::\lib\tools
+set tools=%CURPATH%\lib\tools
 :: tools 위치는 절대경로이므로 수정해야함
 
 systeminfo | find "OS 이름:" > osversion_w
@@ -711,6 +689,9 @@ if "%compare_warn_te%" == "" (
 echo Check Result : UnSafe >> %filename% ) else (
 echo Check Result : Safety >> %filename% ))
 
+del %tempfile%-warning-te
+del %tempfile%-warning-ti
+
 echo ======== 5-12 LAN Manager 인증 수준 ======== >> %filename%
 echo. >> %filename%
 echo 항목중요도 : 중 >> %filename%
@@ -762,16 +743,68 @@ reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Netlogon\Paramet
 
 reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Netlogon\Parameters" | find "RequireSignOrSeal" > %tempfile%-rsos
 for /f "tokens=3" %%a in (%tempfile%-rsos) do set compare-rsos=%%a
-
 reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Netlogon\Parameters" | find "SealSecureChannel" > %tempfile%-ssc1
-for /f "tokens=3" %%a in (%tempfile%-ssc1) do set compare-rsos=%%a
-
+for /f "tokens=3" %%a in (%tempfile%-ssc1) do set compare-ssc1=%%a
 reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Netlogon\Parameters" | find "SignSecureChannel" > %tempfile%-ssc2
-for /f "tokens=3" %%a in (%tempfile%-ssc2) do set compare-rsos=%%a
+for /f "tokens=3" %%a in (%tempfile%-ssc2) do set compare-ssc2=%%a
 
+if "%compare-rsos%" == "0x1" (
+if "%compare-ssc1%" == "0x1" (
+if "%compare-ssc2%" == "0x1" (
+echo Check Result : Safety >> %filename% ) else ( 
+echo Check Result : UnSafe >> %filename%) ) else ( 
+echo Check Result : UnSafe >> %filename% ) ) else ( 
+echo Check Result : UnSafe >> %filename% )
+del %tempfile%-rsos
+del %tempfile%-ssc1
+del %tempfile%-ssc2
+echo ======== 5-14 파일 및 디렉터리 보호 ======== >> %filename%
+echo. >> %filename%
+echo 항목중요도 : 중 >> %filename%
+echo. >> %filename%
+echo 취약점 개요 : NTFS 파일 시스템은 포맷 시 모든 파일과 디렉터리에 소유권과 >> %filename%
+echo 사용 권한 설정이 가능하고 접근 통제 목록 을 제공함으로써 파일 시스템에 비해 >> %filename%
+echo 보다 강화 ACL( ) *FAT된 보안 기능을 제공 >> %filename%
 
+echo. >> %filename%
+echo 양호 : NTFS 파일 시스템을 사용하는 경우  >> %filename%
+echo 취약 : FAT파일 시스템을 사용하는 경우 >> %filename%
 
+echo list volume | diskpart >> %filename%
+echo list volume | diskpart | findstr FAT > nul
+echo. >> %filename%
+if not errorlevel 1 echo Check Result : UnSafe >> %filename%
+if errorlevel 1 echo Check Result : Safety >> %filename%
 
+echo ======== 5-15 컴퓨터 계정 암호 최대 사용 기간 ======== >> %filename%
+echo. >> %filename%
+echo 항목중요도 : 중 >> %filename%
+echo. >> %filename%
+echo 취약점 개요 : NTFS 파일 시스템은 포맷 시 모든 파일과 디렉터리에 소유권과 >> %filename%
+echo 사용 권한 설정이 가능하고 접근 통제 목록 을 제공함으로써 파일 시스템에 비해 >> %filename%
+echo 보다 강화 ACL( ) *FAT된 보안 기능을 제공 >> %filename%
+
+echo. >> %filename%
+echo 양호 : "컴퓨터 계정 암호 변경 사용 안 함" 정책을 사용하지 않으며,  >> %filename%
+echo "컴퓨터 게정 암호 최대 사용 기간" 정책이 "90"일(0x5a)로 설정되어 있는 경우  >> %filename%
+echo 취약 : 정책이 "사용"으로 설정되어있거나, "90일"로 설정되어 있지 않은 경우 >> %filename%
+
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Netlogon\Parameters" | find "DisablePasswordChange" >> %filename%
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Netlogon\Parameters" | find "MaximumPasswordAge" >> %filename%
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Netlogon\Parameters" | find "DisablePasswordChange" > %tempfile%-dpc
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Netlogon\Parameters" | find "MaximumPasswordAge" > %tempfile%-mpa
+for /f "tokens=3" %%a in (%tempfile%-dpc) do set compare-dpc=%%a
+for /f "tokens=3" %%a in (%tempfile%-mpa) do set compare-mpa=%%a
+
+if "%compare-dpc%" == "0x0" (
+if "%compare-mpa%" == "0x5a" ( 
+echo Check Result : Safety >> %filename% ) else (
+echo Check Result : UnSafe >> %filename% ) ) else ( 
+echo Check Result : UnSafe >> %filename% )
+::DisablePasswordChange 0 안전
+::MaximumPasswordAge 90 안전
+del %tempfile%-dpc
+del %tempfile%-mpa
 
 :: #2018-7-4 Script the End 
 cls
